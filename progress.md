@@ -1,14 +1,26 @@
 # Progress
 
-**Last updated:** 2026-11-25
+**Last updated:** 2026-11-26
 
 ## Repository setup
 
 - Added a root `.gitignore` rule to exclude `templates/` from version control.
+- Added a root `.gitignore` rule to exclude the entire `pairs/` folder from
+  version control; local dataset files are preserved.
 - Configured the `origin` remote and this repository's Git author identity.
-- Verified `templates/` is ignored and not staged.
-- The GitHub host rejected access because this environment has no accepted Git
-  credentials; pushing is pending authentication.
+- Verified `templates/` and `pairs/` are ignored.
+- Reviewed [redocs_dataset_sourcing_budget_explorer.html](./redocs_dataset_sourcing_budget_explorer.html)
+  for terminal download feasibility. Public Hugging Face sources can generally
+  be fetched via `hf`/`huggingface_hub`; Kaggle requires account/API setup;
+  government PDF and template links need source URL and terms verification.
+- Added a Python-standard-library downloader for the first 25 CORD v2 test
+  rows and acquired their images and ground-truth JSON (2.6 MB total).
+- Verified all 25 JPEGs and annotations exist and all manifest SHA-256 hashes
+  match. The downloaded data is excluded from Git; the downloader and
+  retrieval notes remain separate from the data files.
+- The explorer's generated script contains placeholder actions and unverified
+  size/license claims, so it should not be run wholesale without checking each
+  source.
 
 ## Completed
 
@@ -21,7 +33,8 @@
   while recording its receipt-only limitation and license.
 - Recorded auxiliary layout/table benchmarks and sources requiring further
   license, provenance, privacy, or size review.
-- Did not download or copy any dataset files.
+- The initial catalog pass did not download dataset files; the CORD test
+  sample was acquired afterward as recorded above.
 
 ## Current scope and constraints
 
@@ -35,8 +48,11 @@
 
 ## Next
 
-- Push the local commit to GitHub after valid authentication is available.
 - Decide whether receipt-specific CORD is acceptable for the first local
   experiment, or whether to investigate a narrower document type.
-- Confirm dataset permissions and sample selection before acquiring any files.
+- Recheck dataset terms before redistribution and keep the sample's
+  receipt-specific limitation explicit.
+- Other explorer datasets remain unacquired where they require Kaggle
+  credentials, have unclear licensing, or lack a verified direct download
+  source.
 - Update this log whenever a project milestone is completed.
