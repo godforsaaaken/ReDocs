@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReDocs Dataset Sourcing & 1–3 GB Budget Explorer</title>
+  <!-- Chosen Palette: Warm Archival Stone & Slate -->
+  <!-- Application Structure Plan: The SPA is organized into four task-oriented sections rather than mirroring the report's linear text chapters: (1) Scale Reality Check & Pipeline Alignment, contrasting massive multi-gigabyte raw corpora against compact evaluation splits and highlighting the certificate domain gap; (2) Interactive 1–3 GB Bundle Configurator, allowing users to switch between the report's recommended bundles (A, B, and Table-Heavy C) or toggle individual datasets while dynamically tracking verified MB, remaining headroom for unquantified archives (StaVer & JDIH PDFs), and license caveats; (3) Filterable Catalog & Statutory Source Explorer with a live detail inspector and one-click bundle sync; and (4) 5-Step Retrieval Workflow & Dynamic Script Generator tailored to the user's active bundle selection. This architecture directly supports engineering decision-making under strict storage and licensing constraints. -->
+  <!-- Visualization & Content Choices: (1) Full Corpora vs. Compact Slices Chart (Chart.js horizontal bar chart on Canvas with mode toggle) -> Goal: Compare massive raw benchmarks (28–117 GB) against 1–3 GB target slices -> Interaction: Toggle between full-scale reality check and compact slice comparison -> Justification: Immediately clarifies why slicing/streaming is mandatory on 4–8 GB RAM hardware. (2) Live Bundle Allocation Doughnut Chart (Chart.js Canvas) -> Goal: Inform & track storage share across the 4 ReDocs pillars plus remaining headroom under 3,000 MB -> Interaction: Dynamically updates whenever presets or dataset checkboxes change -> Justification: Visualizes exact byte budgets and unquantified headroom at a glance. (3) Interactive Catalog Table/Cards + Detail Inspector + Dynamic CLI Script Builder (HTML/Tailwind + Vanilla JS) -> Goal: Organize & synthesize 20+ datasets and statutory sources -> Interaction: Filter by pillar/license, search, inspect caveats, and copy tailored retrieval commands -> Justification: Turns static report tables into an actionable acquisition tool without SVG or Mermaid. -->
+  <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      background-color: #FAF8F5;
+      color: #1E293B;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 620px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
+      max-height: 380px;
+    }
+    @media (min-width: 768px) {
+      .chart-container {
+        height: 330px;
+      }
+    }
+    .card-surface {
+      background-color: #FFFFFF;
+      border: 1px solid #E7E3DC;
+      box-shadow: 0 1px 3px rgba(30, 41, 59, 0.04);
+    }
+    .muted-surface {
+      background-color: #F3EFEA;
+      border: 1px solid #E5DFD6;
+    }
+    .badge-permissive {
+      background-color: #ECFDF5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+    }
+    .badge-caveat {
+      background-color: #FFFBEB;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+    }
+    .badge-gov {
+      background-color: #EFF6FF;
+      color: #1E40AF;
+      border: 1px solid #BFDBFE;
+    }
+    .badge-skip {
+      background-color: #FEF2F2;
+      color: #991B1B;
+      border: 1px solid #FECACA;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-blue-100 selection:text-blue-900">
+
+  <header class="sticky top-0 z-30 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#E7E3DC]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-[#1E40AF] text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          R
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">ReDocs Dataset Sourcing Explorer</h1>
+          <p class="text-xs text-stone-600">1.00 – 3.00 GB Corpus Architecture for Offline Document Reconstruction</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-stone-700">
+        <a href="#scale-overview" class="hover:text-[#1E40AF] transition-colors">1. Scale & Gaps</a>
+        <a href="#bundle-builder" class="hover:text-[#1E40AF] transition-colors">2. Bundle Builder</a>
+        <a href="#catalog-explorer" class="hover:text-[#1E40AF] transition-colors">3. Source Catalog</a>
+        <a href="#retrieval-workflow" class="hover:text-[#1E40AF] transition-colors">4. Retrieval Plan</a>
+      </nav>
+
+      <a href="#bundle-builder" id="nav-budget-pill" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors">
+        <span>Active Base:</span>
+        <span id="nav-budget-value" class="font-mono font-bold">2,461.69 MB</span>
+        <span class="text-emerald-700">/ 3,000 MB</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+    <section id="scale-overview" class="space-y-6">
+      <div class="card-surface rounded-2xl p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-[#1E40AF] bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">Section 1 · Corpus Strategy & Scale Reality</span>
+          <span class="text-xs text-stone-500 font-mono">Convention: 1 GB = 1,000 MB (Decimal)</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Fitting Four Reconstruction Pillars Inside a 1 to 3 GB Footprint</h2>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base max-w-4xl">
+          Because the offline ReDocs pipeline runs on 4–8 GB RAM CPU-only Windows workstations using pre-trained lightweight OCR and reference-guided template injection rather than training deep vision networks from scratch, multi-gigabyte raw training dumps are unnecessary. This section summarizes the target storage envelope, contrasts full academic layout archives against compact evaluation slices, and highlights the critical Indonesian certificate dataset gap identified in the report.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <div class="muted-surface rounded-xl p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-stone-500">Target Storage Window</div>
+            <div class="text-2xl font-bold text-slate-900 mt-1">1.00 – 3.00 GB</div>
+            <p class="text-xs text-stone-600 mt-1">1,000 MB to 3,000 MB total local corpus budget including headroom.</p>
+          </div>
+          <div class="muted-surface rounded-xl p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-stone-500">Recommended Verified Base</div>
+            <div class="text-2xl font-bold text-[#0F766E] mt-1">2.46 GB</div>
+            <p class="text-xs text-stone-600 mt-1">2,461.69 MB verified (Bundle A), leaving ~538 MB for StaVer &amp; PDFs.</p>
+          </div>
+          <div class="muted-surface rounded-xl p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-stone-500">Pipeline Pillars Covered</div>
+            <div class="text-2xl font-bold text-[#1E40AF] mt-1">4 Core Modules</div>
+            <p class="text-xs text-stone-600 mt-1">Indonesian OCR, PDF/table grids, stamp/signature masks, &amp; JDIH templates.</p>
+          </div>
+          <div class="muted-surface rounded-xl p-4">
+            <div class="text-xs font-semibold uppercase tracking-wide text-stone-500">Primary Domain Gap</div>
+            <div class="text-2xl font-bold text-[#B45309] mt-1">Certificates</div>
+            <p class="text-xs text-stone-600 mt-1">No open Indonesian certificate set has paired text, masks, &amp; `.docx` GT.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div class="lg:col-span-7 card-surface rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <h3 class="text-lg font-bold text-slate-900">Why Slicing Matters: Full Corpora vs. Compact Splits</h3>
+              <div class="inline-flex rounded-lg border border-stone-300 bg-stone-100 p-0.5 text-xs font-medium">
+                <button id="btn-scale-full" type="button" class="px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition">Full Raw Corpora (GB)</button>
+                <button id="btn-scale-slice" type="button" class="px-3 py-1 rounded-md text-stone-600 hover:text-slate-900 transition">Compact Target Slices (MB)</button>
+              </div>
+            </div>
+            <p id="scale-chart-caption" class="text-xs text-stone-600 mb-4">
+              Full document layout corpora range from 28 GB to 117 GB—far above the 3.00 GB ceiling. Switch to "Compact Target Slices" to inspect how Parquet shards and test subsets fit cleanly inside budget.
+            </p>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="scaleComparisonChart"></canvas>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-stone-200 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-600">
+            <span>Tip: Hover bars to inspect exact repository sizes and truncation strategies.</span>
+            <span class="font-semibold text-[#B91C1C]">3.00 GB = Hard Storage Ceiling</span>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 card-surface rounded-2xl p-6 flex flex-col justify-between space-y-5">
+          <div>
+            <span class="inline-block text-xs font-semibold px-2.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 mb-2">Critical Finding &amp; Workaround</span>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Bridging the Indonesian Certificate &amp; Statutory Gap</h3>
+            <p class="text-sm text-stone-700 leading-relaxed mb-3">
+              Public ML benchmarks lack scanned Indonesian certificates (<em>Sertifikat</em>) paired with text transcriptions, pixel masks, and editable templates. Meanwhile, Hugging Face's <span class="font-mono text-xs bg-stone-100 px-1.5 py-0.5 rounded">OCR-Data/dataset</span> is a gated <strong>86.7 GB</strong> archive with no dataset card, and Scribd Word templates sit behind paywalls.
+            </p>
+            <div class="space-y-2.5 text-xs text-stone-700">
+              <div class="p-3 rounded-xl bg-stone-50 border border-stone-200">
+                <strong class="text-slate-900 block mb-0.5">1. Transparent Stamp &amp; Logo Isolation (StaVer + SignVerOD)</strong>
+                Use Kaggle's <strong>StaVer</strong> (400 scans at 200 DPI with pixel-level binary masks in <span class="font-mono">ground-truth-pixel/</span>) to evaluate OpenCV HSV/luminance alpha extraction, paired with <strong>SignVerOD</strong> (283.23 MB sample) and <strong>tech4humans/signature-detection</strong> (147 MB).
+              </div>
+              <div class="p-3 rounded-xl bg-stone-50 border border-stone-200">
+                <strong class="text-slate-900 block mb-0.5">2. Statutory Cirebon &amp; BPK Grounding</strong>
+                Anchor layout geometry in <strong>Permendagri No. 1 Tahun 2023</strong>, <strong>Permendagri No. 83 Tahun 2022</strong>, <strong>Peraturan ANRI No. 5 Tahun 2021</strong>, public PDFs from <strong>JDIH DPRD Kota Cirebon</strong>, and the <strong>5.46 MB</strong> <span class="font-mono">.docx</span> <em>Template Naskah Dinas</em> pack.
+              </div>
+              <div class="p-3 rounded-xl bg-blue-50/70 border border-blue-200">
+                <strong class="text-blue-950 block mb-0.5">3. Synthetic Round-Trip Certificate Pairs</strong>
+                Inject transparent StaVer stamp/logo crops and Indonesian fields into a Jinja2-tagged <span class="font-mono">.docx</span> certificate template, render to PDF, and apply controlled skew/resolution degradation for exact pixel-IoU and CER evaluation.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="bundle-builder" class="space-y-6">
+      <div class="card-surface rounded-2xl p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-[#0F766E] bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">Section 2 · Interactive Storage &amp; License Simulator</span>
+          <span class="text-xs text-stone-500">Select a preset bundle or toggle individual modules below</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Interactive 1 – 3 GB Bundle Configurator</h2>
+        <p class="text-stone-700 text-sm sm:text-base max-w-4xl mb-6">
+          Explore the report's recommended acquisition bundles or customize your own combination of datasets. The simulator tracks verified megabytes against the <strong>1,000 MB – 3,000 MB</strong> target window, reserves headroom for unquantified archives (<em>StaVer</em> and JDIH statutory PDFs), and audits license caveats automatically.
+        </p>
+
+        <div class="flex flex-wrap gap-3 pb-6 border-b border-stone-200">
+          <button type="button" data-preset="bundleA" class="preset-btn px-4 py-2.5 rounded-xl text-left border-2 border-[#1E40AF] bg-blue-50/60 transition">
+            <div class="text-xs font-bold text-[#1E40AF]">Bundle A (Recommended PKL)</div>
+            <div class="text-sm font-bold text-slate-900">Balanced Full-Pipeline Pack</div>
+            <div class="text-xs text-stone-600 mt-0.5">2,461.69 MB base · ~538 MB headroom</div>
+          </button>
+
+          <button type="button" data-preset="bundleB" class="preset-btn px-4 py-2.5 rounded-xl text-left border border-stone-300 bg-white hover:border-stone-400 transition">
+            <div class="text-xs font-bold text-[#0F766E]">Bundle B (Strictly Permissive)</div>
+            <div class="text-sm font-bold text-slate-900">Indonesian-Heavy &amp; Permissive</div>
+            <div class="text-xs text-stone-600 mt-0.5">2,459.46 MB base · ~540 MB headroom</div>
+          </button>
+
+          <button type="button" data-preset="bundleC" class="preset-btn px-4 py-2.5 rounded-xl text-left border border-stone-300 bg-white hover:border-stone-400 transition">
+            <div class="text-xs font-bold text-stone-700">Bundle C (Table Variant)</div>
+            <div class="text-sm font-bold text-slate-900">Table-Heavy &amp; Compact Base</div>
+            <div class="text-xs text-stone-600 mt-0.5">2,028.46 MB base · ~971 MB headroom</div>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
+          <div class="lg:col-span-7 space-y-5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-bold text-slate-900">Selectable Datasets &amp; Compact Splits</h3>
+              <span class="text-xs text-stone-500">Checked items update storage &amp; CLI script</span>
+            </div>
+
+            <div id="bundle-checklist" class="space-y-3"></div>
+
+            <div class="p-4 rounded-xl bg-stone-50 border border-stone-200">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold uppercase tracking-wide text-stone-700">Unquantified Headroom Items (Always Recommended)</span>
+                <span class="text-xs font-mono text-stone-600">Allocated from remaining headroom</span>
+              </div>
+              <p class="text-xs text-stone-600 leading-relaxed">
+                <strong>StaVer</strong> (400 scanned invoice pages at 200 DPI + binary pixel masks), <strong>JDIH BPK Statutory PDFs</strong> (Permendagri 1/2023, Permendagri 83/2022, Perka ANRI 5/2021), and <strong>5–10 public DPRD Kota Cirebon PDFs</strong> do not report exact byte sizes in index metadata and fit comfortably inside the remaining ~538–971 MB headroom.
+              </p>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 flex flex-col justify-between space-y-5">
+            <div class="muted-surface rounded-2xl p-5 space-y-4">
+              <div class="flex items-baseline justify-between">
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-wider text-stone-500">Verified Base Footprint</div>
+                  <div class="flex items-baseline gap-2 mt-0.5">
+                    <span id="sim-total-mb" class="text-3xl font-extrabold text-slate-900">2,461.69 MB</span>
+                    <span id="sim-total-gb" class="text-sm font-semibold text-stone-600">(~2.46 GB)</span>
+                  </div>
+                </div>
+                <span id="sim-status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                  Optimal 1–3 GB Fit
+                </span>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-medium text-stone-600 mb-1">
+                  <span>0 MB</span>
+                  <span>Min Target: 1,000 MB</span>
+                  <span>Ceiling: 3,000 MB</span>
+                </div>
+                <div class="w-full h-4 bg-stone-200 rounded-full overflow-hidden relative border border-stone-300">
+                  <div class="absolute top-0 bottom-0 left-[33.33%] w-0.5 bg-stone-500 z-10" title="1.00 GB Minimum Target"></div>
+                  <div id="sim-progress-bar" class="h-full bg-[#0F766E] transition-all duration-300" style="width: 82.06%;"></div>
+                </div>
+                <div class="flex justify-between text-xs mt-1.5">
+                  <span class="text-stone-600">Headroom under 3.00 GB:</span>
+                  <span id="sim-headroom-mb" class="font-mono font-bold text-slate-900">538.31 MB</span>
+                </div>
+              </div>
+
+              <div class="chart-container" style="height: 240px; max-height: 260px;">
+                <canvas id="bundleAllocationChart"></canvas>
+              </div>
+            </div>
+
+            <div id="sim-license-audit" class="rounded-xl p-4 border border-amber-200 bg-amber-50/80 text-xs space-y-1.5">
+              <div class="font-bold text-amber-950 flex items-center gap-1.5">
+                <span>⚖️</span>
+                <span>Active Bundle License &amp; Caveat Audit</span>
+              </div>
+              <ul id="sim-audit-list" class="list-disc pl-5 text-amber-900 space-y-1"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="catalog-explorer" class="space-y-6">
+      <div class="card-surface rounded-2xl p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-[#1E40AF] bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">Section 3 · Complete Source Directory</span>
+          <span id="catalog-count-label" class="text-xs font-semibold text-stone-600">Showing 18 sources</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Dataset, Benchmark &amp; Statutory Source Explorer</h2>
+        <p class="text-stone-700 text-sm sm:text-base max-w-4xl mb-6">
+          Filter all repositories, benchmarks, and Indonesian government sources evaluated in the report by pipeline pillar, license posture, or keyword. Click any item to inspect its annotation schema, scan DPI/resolution specs, and data quality caveats.
+        </p>
+
+        <div class="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center pb-5 border-b border-stone-200">
+          <div class="flex flex-wrap gap-1.5" id="pillar-filter-group">
+            <button type="button" data-pillar="all" class="pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1E40AF] text-white">All Pillars</button>
+            <button type="button" data-pillar="ocr" class="pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">Indonesian OCR &amp; Forms</button>
+            <button type="button" data-pillar="assets" class="pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">Stamps, Signatures &amp; Certs</button>
+            <button type="button" data-pillar="layout" class="pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">PDF Layout &amp; Tables</button>
+            <button type="button" data-pillar="statutory" class="pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200">Statutory &amp; Templates</button>
+          </div>
+
+          <div class="flex flex-wrap sm:flex-nowrap gap-2">
+            <select id="license-filter" aria-label="Filter by license status" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-stone-300 text-stone-800 focus:outline-none focus:border-[#1E40AF]">
+              <option value="all">All License Postures</option>
+              <option value="permissive">Permissive (CC-BY / Apache / CDLA)</option>
+              <option value="caveat">Research / Non-Commercial Caveat</option>
+              <option value="gov">Official Gov / Public Statutory</option>
+              <option value="unverified">Size / License Unverified or Skip</option>
+            </select>
+
+            <input id="catalog-search" type="search" placeholder="Search dataset, ID, or spec..." class="px-3 py-1.5 rounded-lg text-xs bg-white border border-stone-300 text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#1E40AF] w-full sm:w-56">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-6">
+          <div class="lg:col-span-7 space-y-3 max-h-[620px] overflow-y-auto pr-1" id="catalog-list"></div>
+
+          <div class="lg:col-span-5">
+            <div id="catalog-detail-panel" class="muted-surface rounded-2xl p-6 sticky top-20 space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span id="detail-pillar-tag" class="text-xs font-bold uppercase tracking-wider text-[#1E40AF]">Indonesian OCR &amp; Forms</span>
+                  <h3 id="detail-title" class="text-xl font-bold text-slate-900 mt-1">naver-clova-ix/cord-v2</h3>
+                  <p id="detail-platform" class="text-xs font-mono text-stone-600 mt-0.5">Hugging Face · Verified Parquet Shards</p>
+                </div>
+                <span id="detail-license-badge" class="badge-permissive px-2.5 py-1 rounded-full text-xs font-bold shrink-0">CC-BY-4.0</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="bg-white p-3 rounded-xl border border-stone-200">
+                  <div class="text-stone-500">Verified / Compact Size</div>
+                  <div id="detail-compact-size" class="font-bold text-slate-900 text-sm mt-0.5">476 MB (test + val)</div>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-stone-200">
+                  <div class="text-stone-500">Full Repository Size</div>
+                  <div id="detail-full-size" class="font-bold text-slate-900 text-sm mt-0.5">2,307 MB (2.31 GB)</div>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs text-stone-700 leading-relaxed">
+                <div>
+                  <strong class="text-slate-900 block mb-0.5">Samples &amp; Annotation Structure</strong>
+                  <p id="detail-annotations"></p>
+                </div>
+                <div>
+                  <strong class="text-slate-900 block mb-0.5">ReDocs Pipeline Fit &amp; Specs</strong>
+                  <p id="detail-fit"></p>
+                </div>
+                <div class="p-3 rounded-xl bg-white border border-stone-200">
+                  <strong class="text-slate-900 block mb-0.5">Caveats &amp; Practical Notes</strong>
+                  <p id="detail-caveats"></p>
+                </div>
+              </div>
+
+              <div id="detail-action-row" class="pt-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="retrieval-workflow" class="space-y-6">
+      <div class="card-surface rounded-2xl p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-[#0F766E] bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">Section 4 · Actionable Execution Plan</span>
+          <span class="text-xs text-stone-500">Synced with your active bundle in Section 2</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">5-Step Retrieval &amp; Corpus Assembly Workflow</h2>
+        <p class="text-stone-700 text-sm sm:text-base max-w-4xl mb-6">
+          Follow this five-step sequence to assemble the stratified evaluation corpus without exceeding 3.00 GB or triggering rate limits. Click any step below to inspect exact file paths, statutory document numbers, and copy a dynamically generated Python retrieval snippet matching your active bundle.
+        </p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-6 space-y-2.5" id="workflow-steps"></div>
+
+          <div class="lg:col-span-6 flex flex-col justify-between bg-slate-900 text-slate-100 rounded-2xl p-5 border border-slate-800">
+            <div>
+              <div class="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-800">
+                <div>
+                  <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Dynamic Retrieval Script</span>
+                  <div class="text-xs text-slate-400 mt-0.5">Tailored to your checked datasets in Section 2</div>
+                </div>
+                <button id="copy-script-btn" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition">
+                  Copy Snippet
+                </button>
+              </div>
+              <pre id="dynamic-script-output" class="text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed whitespace-pre-wrap"></pre>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex flex-wrap justify-between gap-2">
+              <span>Requires: <code class="text-emerald-300">pip install huggingface_hub&gt;=1.1.3 datasets</code></span>
+              <span>Target disk cap: <strong class="text-white">&le; 3.00 GB</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-[#E7E3DC] bg-[#F3EFEA] mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-600">
+      <div>
+        <strong>ReDocs Offline Document Reconstruction Studio</strong> · Stratified Dataset Sourcing &amp; 1–3 GB Budget Planner
+      </div>
+      <div>
+        All figures verified against source report metadata (decimal GB: 1 GB = 1,000 MB).
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const bundleItems = [
+      {
+        id: 'omnidocbench',
+        name: 'opendatalab/OmniDocBench (Full)',
+        pillar: 'PDF Layout & Tables',
+        pillarKey: 'layout',
+        mb: 1550.0,
+        license: 'Apache 2.0 / Research-Only Caveat',
+        licenseType: 'caveat',
+        note: '1,651 PDF pages (10 doc types), original PDF slices, 28 block classes & HTML tables.',
+        caveat: 'OmniDocBench lists Apache 2.0 on HF/ModelScope, while v1.6 lists CC-BY-NC-4.0 and ModelScope states research-only/non-commercial use (safe for academic PKL).'
+      },
+      {
+        id: 'bigdocs_pubtables',
+        name: 'BigDocs-7.5M / pubtables-1m Subfolder',
+        pillar: 'PDF Layout & Tables',
+        pillarKey: 'layout',
+        mb: 1400.0,
+        license: 'Check BigDocs Card (CDLA-2.0 upstream)',
+        licenseType: 'permissive',
+        note: 'Compact 1.4 GB table-structure subset from PubTables-1M (93,834 cropped test tables).',
+        caveat: 'Verify ServiceNow/BigDocs-7.5M repository license card prior to packaging; upstream PubTables-1M is CDLA-Permissive-2.0.'
+      },
+      {
+        id: 'doclaynet_stream',
+        name: 'docling-project/DocLayNet-v1.2 (Capped Stream)',
+        pillar: 'PDF Layout & Tables',
+        pillarKey: 'layout',
+        mb: 250.0,
+        license: 'CDLA-Permissive-1.0',
+        licenseType: 'permissive',
+        note: 'Streamed 250 MB sample of native PDFs + layout segmentation (avoids 28–31.8 GB full download).',
+        caveat: 'Must be retrieved via Hugging Face datasets streaming=True with a local byte/sample cap.'
+      },
+      {
+        id: 'cord_v2_compact',
+        name: 'naver-clova-ix/cord-v2 (Test + Val Shards)',
+        pillar: 'Indonesian OCR & Forms',
+        pillarKey: 'ocr',
+        mb: 476.0,
+        license: 'CC-BY-4.0',
+        licenseType: 'permissive',
+        note: 'test (234 MB) + validation (242 MB) Parquet shards for Indonesian CER/WER & row grouping.',
+        caveat: 'Commercial receipt domain rather than formal administrative letters; pair with JDIH PDFs.'
+      },
+      {
+        id: 'cord_v2_full',
+        name: 'naver-clova-ix/cord-v2 (Full Corpus)',
+        pillar: 'Indonesian OCR & Forms',
+        pillarKey: 'ocr',
+        mb: 2307.0,
+        license: 'CC-BY-4.0',
+        licenseType: 'permissive',
+        note: 'Complete ~1,000 Indonesian receipt images (avg 864x1296 PNG) + hierarchical JSON labels.',
+        caveat: 'Consumes 2.31 GB alone; leave unchecked if using OmniDocBench (1.55 GB) to stay under 3.00 GB.'
+      },
+      {
+        id: 'tech4humans_sig',
+        name: 'tech4humans/signature-detection',
+        pillar: 'Stamps, Signatures & Certs',
+        pillarKey: 'assets',
+        mb: 147.0,
+        license: 'Apache 2.0',
+        licenseType: 'permissive',
+        note: '2,819 images (Tobacco800 + signatures-xc8up) with COCO JSON signature bounding boxes.',
+        caveat: 'Images are pre-resized to 640x640 with augmentations rather than native 200–300 DPI scans.'
+      },
+      {
+        id: 'signverod_sample',
+        name: 'SignVerOD (High-Res Sample)',
+        pillar: 'Stamps, Signatures & Certs',
+        pillarKey: 'assets',
+        mb: 283.23,
+        license: 'Check DatasetNinja Card',
+        licenseType: 'caveat',
+        note: 'High-res scans (up to 4390x3424 px) with signature, initials, date, & redaction boxes.',
+        caveat: 'Includes bounding boxes only (no pixel segmentation masks and no stamp class); license not listed in source metadata.'
+      },
+      {
+        id: 'srikandi_docx',
+        name: 'srikandilangkat.web.id Template Pack (.docx)',
+        pillar: 'Statutory & Templates',
+        pillarKey: 'statutory',
+        mb: 5.46,
+        license: 'Public Indonesian Admin Template',
+        licenseType: 'gov',
+        note: 'Ready-made Word templates aligned with Permendagri No. 1/2023 & Permendagri No. 83/2022.',
+        caveat: 'Convert target slots into Jinja2 tags ({{ nomor_surat }}, {{ perihal }}, {{ logo_img }}, {{ stempel_ttd }}).'
+      }
+    ];
+
+    const presets = {
+      bundleA: ['omnidocbench', 'cord_v2_compact', 'tech4humans_sig', 'signverod_sample', 'srikandi_docx'],
+      bundleB: ['cord_v2_full', 'tech4humans_sig', 'doclaynet_stream', 'srikandi_docx'],
+      bundleC: ['bigdocs_pubtables', 'cord_v2_compact', 'tech4humans_sig', 'srikandi_docx']
+    };
+
+    const catalogData = [
+      {
+        id: 'cat-cord-v2',
+        name: 'naver-clova-ix/cord-v2',
+        platform: 'Hugging Face',
+        pillar: 'ocr',
+        pillarLabel: 'Indonesian OCR & Forms',
+        compactSize: '476 MB (test 234 MB + val 242 MB)',
+        fullSize: '2,307 MB (2.31 GB)',
+        license: 'CC-BY-4.0',
+        licenseCategory: 'permissive',
+        annotations: '~1,000 photographed Indonesian receipts (avg. 864×1296 PNG, 800 train) with entity labels, OCR text, and sub_group_id line grouping.',
+        fit: 'Primary verified benchmark for Indonesian CER/WER evaluation and repeating tabular line-item parsing within a 476 MB Parquet download.',
+        caveats: 'Domain consists of retail/restaurant receipts rather than formal government letters; combine with JDIH Cirebon PDFs for statutory vocabulary.',
+        bundleItemId: 'cord_v2_compact'
+      },
+      {
+        id: 'cat-appen-id',
+        name: 'appenlimited/ocr-image-data-of-indonesian-language-documents',
+        platform: 'Kaggle',
+        pillar: 'ocr',
+        pillarLabel: 'Indonesian OCR & Forms',
+        compactSize: 'Selective class sample (500 TABLE / 500 CONTRACT)',
+        fullSize: 'Not specified in indexed metadata',
+        license: 'Check Kaggle Page',
+        licenseCategory: 'unverified',
+        annotations: '6,506 Indonesian document images across 10 classes (RECEIPT 1,500; TRADE 1,003; TABLE 500; CONTRACT 500; IDCARD 500; etc.).',
+        fit: 'Supplements receipt layouts with formal Indonesian TABLE and CONTRACT page structures.',
+        caveats: 'Exact archive byte size and Kaggle license terms must be verified on the dataset page prior to archiving.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-perpres-118',
+        name: 'spikeybarbs/perpres-118-2025-lampiran-v',
+        platform: 'Kaggle',
+        pillar: 'ocr',
+        pillarLabel: 'Indonesian OCR & Forms',
+        compactSize: 'Individual regulatory PDFs',
+        fullSize: 'Not specified in indexed metadata',
+        license: 'Indonesian Statutory PDFs',
+        licenseCategory: 'gov',
+        annotations: 'Original Indonesian Presidential Regulation PDFs (2021–2025) for PDF rendering, OCR, and table extraction.',
+        fit: 'Tests multi-page Indonesian regulatory PDF table extraction and text layer inspection.',
+        caveats: 'Contains source PDFs without pre-labeled ground-truth table JSON; archive size unverified in metadata.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-indoscene',
+        name: 'abdanmulia/IndoSceneTextRecognition-Synth-120K',
+        platform: 'Hugging Face',
+        pillar: 'ocr',
+        pillarLabel: 'Indonesian OCR & Forms',
+        compactSize: 'LMDB cropped strings',
+        fullSize: 'Not specified in indexed metadata',
+        license: 'Unverified in metadata',
+        licenseCategory: 'unverified',
+        annotations: '120,253 synthetic cropped text images + ground-truth strings in Bahasa Indonesia and regional languages (LMDB format).',
+        fit: 'Useful only if stress-testing single-line word recognition on Indonesian vocabulary.',
+        caveats: 'Built for natural scene text recognition rather than full A4 administrative document layouts; size/license unverified.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-funsd-xfund',
+        name: 'FUNSD & XFUND (jpwang/lilt · rogerdehe/xfund)',
+        platform: 'Hugging Face / GitHub',
+        pillar: 'ocr',
+        pillarLabel: 'Indonesian OCR & Forms',
+        compactSize: '~1,200 MB (~1.2 GB pre-processed bundle)',
+        fullSize: '~1,200 MB (~1.2 GB)',
+        license: 'Non-Commercial (Research / CC BY-NC-SA 4.0)',
+        licenseCategory: 'caveat',
+        annotations: '199 scanned forms per language (FUNSD: English; XFUND: 7 languages—ZH, JA, ES, FR, IT, DE, PT) with question/answer key-value entity linking.',
+        fit: 'Benchmark key-value form field linking on noisy scanned forms.',
+        caveats: 'No Indonesian language split and no native PDFs; strictly non-commercial (FUNSD research-only, XFUND CC BY-NC-SA 4.0).',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-staver',
+        name: 'StaVer (rtatman/stamp-verification-staver-dataset)',
+        platform: 'Kaggle',
+        pillar: 'assets',
+        pillarLabel: 'Stamps, Signatures & Certs',
+        compactSize: '400 PNGs + pixel masks (fits in ~538 MB headroom)',
+        fullSize: 'Not specified in indexed metadata',
+        license: 'Check Kaggle Page',
+        licenseCategory: 'unverified',
+        annotations: '400 scanned invoice pages at 200 DPI with colored/black stamps, overlapping text, color logos, and pixel-level binary segmentation masks (ground-truth-pixel/).',
+        fit: 'Essential for measuring exact pixel Intersection-over-Union (IoU) of OpenCV HSV/luminance transparent stamp extraction at 200 DPI.',
+        caveats: 'Invoice domain rather than certificates; early IDs (stampDS-00008, stampDS-00010, stampDS-00015) contain zero or multiple boxes—handle empty masks safely in evaluation scripts.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-signverod',
+        name: 'SignVerOD (Tobacco800 + NIST Scans)',
+        platform: 'DatasetNinja',
+        pillar: 'assets',
+        pillarLabel: 'Stamps, Signatures & Certs',
+        compactSize: '283.23 MB (Sample)',
+        fullSize: '760.04 MB (Full)',
+        license: 'License not listed in source metadata',
+        licenseCategory: 'caveat',
+        annotations: '2,765 scanned pages (Tobacco800 + NIST litigation, tax, lease, cheque docs) with bounding boxes for signature (4,551), redaction (1,912), initials (989), and date (570).',
+        fit: 'Provides authentic high-resolution scans (up to 4390×3424 px) for signature detection and cropping.',
+        caveats: 'Provides bounding boxes only (no pixel segmentation masks and no stamp class); verify license terms on DatasetNinja.',
+        bundleItemId: 'signverod_sample'
+      },
+      {
+        id: 'cat-tech4humans',
+        name: 'tech4humans/signature-detection',
+        platform: 'Hugging Face',
+        pillar: 'assets',
+        pillarLabel: 'Stamps, Signatures & Certs',
+        compactSize: '147 MB',
+        fullSize: '147 MB',
+        license: 'Apache 2.0',
+        licenseCategory: 'permissive',
+        annotations: '2,819 images (1,980 train / 420 val / 419 test) merging Tobacco800 + signatures-xc8up with COCO JSON signature bounding boxes.',
+        fit: 'Lightweight, permissively licensed signature detection evaluation set with clean train/val/test splits.',
+        caveats: 'Images are pre-resized to 640×640 with augmentations rather than native scan DPI.',
+        bundleItemId: 'tech4humans_sig'
+      },
+      {
+        id: 'cat-roboflow-stamps',
+        name: 'Roboflow Stamp & Signature Sets (stampa & peers)',
+        platform: 'Roboflow Universe',
+        pillar: 'assets',
+        pillarLabel: 'Stamps, Signatures & Certs',
+        compactSize: '424 – 2,100 images (YOLO/COCO export)',
+        fullSize: 'Not specified on index pages',
+        license: 'CC BY 4.0',
+        licenseCategory: 'permissive',
+        annotations: 'stampa/stamp-detection-4jhgg (2,100 images: signature, stamp), mariam-rwmfc (734 images), and personal-projects (640 images) with detection boxes.',
+        fit: 'Permissively licensed (CC BY 4.0) bounding-box variety for combined stamp + signature localization.',
+        caveats: 'Object detection bounding boxes only—no pixel-level segmentation masks.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-roboflow-certs',
+        name: 'Roboflow certificates & IDP_stamp_signature_detection',
+        platform: 'Roboflow Universe',
+        pillar: 'assets',
+        pillarLabel: 'Stamps, Signatures & Certs',
+        compactSize: '555 images (certificates) / 2.23k images (IDP)',
+        fullSize: 'Not specified on index pages',
+        license: 'Unverified in indexed summaries',
+        licenseCategory: 'unverified',
+        annotations: 'certificates (555 images: signature, mix, stamp) and IDP_stamp_signature_detection (2.23k images: signature, stamp) with bounding boxes.',
+        fit: 'Visual stamp/signature detection on certificate-style layouts.',
+        caveats: 'Lacks OCR text labels, editable templates, and verified license metadata; pair with synthetic `.docx` certificates for end-to-end testing.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-omnidocbench',
+        name: 'opendatalab/OmniDocBench',
+        platform: 'Hugging Face / ModelScope',
+        pillar: 'layout',
+        pillarLabel: 'PDF Layout & Tables',
+        compactSize: '1,550 MB (1.55 GB; v1.6 mirror 1.49 GB)',
+        fullSize: '1,550 MB (1.55 GB)',
+        license: 'Apache 2.0 / Research-Only Caveat',
+        licenseCategory: 'caveat',
+        annotations: '1,651 PDF pages across 10 document types (reports, newspapers, notes, exams, historical) pairing original PDF slices + PNGs (incl. 200 DPI scans), 28 block classes, reading order, OCR text, and HTML tables.',
+        fit: 'All-in-one benchmark for native PDF inspection, reading order, OCR, and HTML table structure reconstruction inside 1.55 GB.',
+        caveats: 'Dual licensing terms: HF/ModelScope list Apache 2.0, while v1.6 lists CC-BY-NC-4.0 and ModelScope notes research-only / non-commercial use.',
+        bundleItemId: 'omnidocbench'
+      },
+      {
+        id: 'cat-pubtables',
+        name: 'bsmock/pubtables-1m & BigDocs-7.5M/pubtables-1m',
+        platform: 'Hugging Face',
+        pillar: 'layout',
+        pillarLabel: 'PDF Layout & Tables',
+        compactSize: '1,400 MB (BigDocs subfolder) or 2,720 MB (Test set)',
+        fullSize: '117,000 MB (117 GB)',
+        license: 'CDLA-Permissive-2.0',
+        licenseCategory: 'permissive',
+        annotations: 'PubTables-1M structure test set (93,834 cropped tables) with fine-grained row, column, and spanning-cell bounding boxes.',
+        fit: 'Evaluates complex table grid and merged-cell recovery without downloading the 117 GB full archive.',
+        caveats: 'Scientific PubMed table domain; check ServiceNow/BigDocs-7.5M repository card if using its 1.4 GB subfolder.',
+        bundleItemId: 'bigdocs_pubtables'
+      },
+      {
+        id: 'cat-doclaynet',
+        name: 'docling-project/DocLayNet-v1.2',
+        platform: 'Hugging Face',
+        pillar: 'layout',
+        pillarLabel: 'PDF Layout & Tables',
+        compactSize: '250 MB capped stream (streaming=True)',
+        fullSize: '28,000 – 31,800 MB (28 GiB – 31.8 GB)',
+        license: 'CDLA-Permissive-1.0',
+        licenseCategory: 'permissive',
+        annotations: '80,863 pages (tenders, laws, financial reports, manuals) with human-annotated layout segmentation and embedded native PDF files.',
+        fit: 'Strictly permissive (CDLA-Permissive-1.0) native PDF + layout benchmark when streamed into a capped local sample.',
+        caveats: 'Do not download full shards; use Hugging Face streaming API to cap local disk footprint at 200–300 MB.',
+        bundleItemId: 'doclaynet_stream'
+      },
+      {
+        id: 'cat-heavy-skip',
+        name: 'PubLayNet (104 GB) · DocBank (50 GB) · RVL-CDIP',
+        platform: 'Academic Archives',
+        pillar: 'layout',
+        pillarLabel: 'PDF Layout & Tables',
+        compactSize: 'Skip full downloads',
+        fullSize: '50,000 – 104,000 MB (50 – 104 GB)',
+        license: 'Mixed Academic Licenses',
+        licenseCategory: 'unverified',
+        annotations: 'PubLayNet (101.5–104 GB scientific articles), DocBank (~50 GB), and RVL-CDIP (400k coarse 16-class grayscale scans).',
+        fit: 'Not recommended for ReDocs.',
+        caveats: 'Exceeds the 3.00 GB storage cap by 15x–35x and lacks Indonesian administrative layouts.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-permendagri',
+        name: 'Permendagri No. 1/2023, Permendagri No. 83/2022 & Perka ANRI No. 5/2021',
+        platform: 'JDIH BPK (peraturan.bpk.go.id)',
+        pillar: 'statutory',
+        pillarLabel: 'Statutory & Templates',
+        compactSize: 'Individual PDFs (< 15 MB combined)',
+        fullSize: 'Official Regulatory PDFs',
+        license: 'Indonesian Statutory Public Domain',
+        licenseCategory: 'gov',
+        annotations: 'Permendagri 1/2023 (Tata Naskah Dinas Pemda, 19 pp + appendices, Details/245536), Permendagri 83/2022 (Kode Klasifikasi Arsip, Details/247841), Perka ANRI 5/2021 (114 pp, Details/173489) & ANRI 5/2025 (Details/316786).',
+        fit: 'Defines authoritative margins, typography, Kop Surat hierarchy, numbering codes, and signature/stamp blocks for regional government documents.',
+        caveats: 'Reference standards rather than annotated ML splits; use to design compliant `.docx` reference templates.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-jdih-cirebon',
+        name: 'Public DPRD Kota Cirebon & Pemkot Cirebon PDFs',
+        platform: 'jdih-dprd.cirebonkota.go.id & jdih.cirebonkota.go.id',
+        pillar: 'statutory',
+        pillarLabel: 'Statutory & Templates',
+        compactSize: '5–10 representative PDFs (< 25 MB)',
+        fullSize: 'Public Municipal Repository',
+        license: 'Official Public Government Records',
+        licenseCategory: 'gov',
+        annotations: 'Keputusan DPRD Kota Cirebon, Keputusan Pimpinan DPRD, and Perda PDFs (e.g., KEPDPRD112026_280pdf.pdf, KEPPIM32026_275.pdf, PERDA52015_255.pdf, KD188_342Kep_DPRD-0420202020.pdf).',
+        fit: 'Provides authentic DPRD Kota Cirebon Kop Surat headers, numbering blocks, and seal layouts with zero privacy exposure.',
+        caveats: 'Publicly promulgated records only; safe for reproducible academic benchmarking in Bab 3 and Bab 4.',
+        bundleItemId: null
+      },
+      {
+        id: 'cat-srikandi-docx',
+        name: 'srikandilangkat.web.id Template Naskah Dinas (.docx)',
+        platform: 'srikandilangkat.web.id/p/download.html',
+        pillar: 'statutory',
+        pillarLabel: 'Statutory & Templates',
+        compactSize: '5.46 MB',
+        fullSize: '5.46 MB',
+        license: 'Public Administrative Template Pack',
+        licenseCategory: 'gov',
+        annotations: 'Ready-made Microsoft Word (.docx) administrative templates formatted per Permendagri 1/2023 and Permendagri 83/2022.',
+        fit: 'Serves as the base geometry for Jinja2-tagged docxtpl reference templates ({{ nomor_surat }}, {{ perihal }}, {{ logo_img }}, {{ stempel_ttd }}).',
+        caveats: 'Supplement with prismabirokrasi.id Nota Dinas templates or GitHub ozonerik/eSurat13 as needed.',
+        bundleItemId: 'srikandi_docx'
+      }
+    ];
+
+    const workflowStepsData = [
+      {
+        step: 1,
+        title: 'Pull OmniDocBench or Stream DocLayNet-v1.2',
+        subtitle: 'PDF layout, reading order, and HTML table structure',
+        details: 'Install huggingface_hub (>=1.1.3 recommended to avoid rate limits). Download opendatalab/OmniDocBench (1.55 GB) for Bundle A, or use Hugging Face datasets streaming=True on docling-project/DocLayNet-v1.2 (CDLA-Permissive-1.0) to save a capped 250 MB sample of embedded native PDFs.'
+      },
+      {
+        step: 2,
+        title: 'Download Selective CORD v2 Parquet Shards',
+        subtitle: 'Indonesian OCR ground truth without bloating storage',
+        details: 'Instead of downloading all 2.31 GB of naver-clova-ix/cord-v2 (CC-BY-4.0), pull only data/test-00000-of-00001-*.parquet (234 MB) and data/validation-00000-of-00001-*.parquet (242 MB) for a compact 476 MB footprint.'
+      },
+      {
+        step: 3,
+        title: 'Fetch Stamp & Signature Datasets',
+        subtitle: 'Transparent asset masking and signature detection',
+        details: 'Download tech4humans/signature-detection (147 MB, Apache 2.0) from Hugging Face, pull the 283.23 MB SignVerOD high-res sample via dataset_tools, and download Kaggle rtatman/stamp-verification-staver-dataset (400 scans at 200 DPI + ground-truth-pixel/ binary masks).'
+      },
+      {
+        step: 4,
+        title: 'Collect Permendagri Standards, Cirebon PDFs & .docx Templates',
+        subtitle: 'Authentic DPRD Kota Cirebon layout & statutory geometry',
+        details: 'Download Permendagri No. 1 Tahun 2023 (Details/245536), Permendagri No. 83 Tahun 2022 (Details/247841), and Perka ANRI No. 5 Tahun 2021 (Details/173489) from peraturan.bpk.go.id; fetch 5–10 public Keputusan DPRD / Perda PDFs from jdih-dprd.cirebonkota.go.id; and download the 5.46 MB .docx Template Naskah Dinas pack from srikandilangkat.web.id.'
+      },
+      {
+        step: 5,
+        title: 'Generate Synthetic Certificate & Skew Pairs',
+        subtitle: 'Close the Indonesian certificate ground-truth gap',
+        details: 'Populate one clean Jinja2-tagged .docx certificate template with Indonesian text fields and transparent StaVer stamp/logo crops, render to PDF, and export rotated/skewed 200 DPI test images for exact field, table, and pixel-IoU evaluation.'
+      }
+    ];
+
+    let activeBundleIds = new Set(presets.bundleA);
+    let activePillar = 'all';
+    let activeLicense = 'all';
+    let searchQuery = '';
+    let selectedCatalogId = 'cat-cord-v2';
+    let activeStep = 1;
+    let scaleMode = 'full';
+    let scaleChart = null;
+    let allocationChart = null;
+
+    function wrapLabel(text, maxLen = 16) {
+      if (text.length <= maxLen) return text;
+      const words = text.split(' ');
+      const lines = [];
+      let current = '';
+      for (const word of words) {
+        if ((current + ' ' + word).trim().length <= maxLen) {
+          current = (current + ' ' + word).trim();
+        } else {
+          if (current) lines.push(current);
+          current = word;
+        }
+      }
+      if (current) lines.push(current);
+      return lines;
+    }
+
+    function initScaleChart() {
+      const ctx = document.getElementById('scaleComparisonChart').getContext('2d');
+      scaleChart = new Chart(ctx, {
+        type: 'bar',
+        data: getScaleChartData('full'),
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed.x;
+                  if (scaleMode === 'full') {
+                    return ` Full Corpus: ${val.toLocaleString()} GB (${(val * 1000).toLocaleString()} MB)`;
+                  }
+                  return ` Compact Slice: ${val.toLocaleString()} MB (${(val / 1000).toFixed(2)} GB)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: '#E7E3DC' },
+              title: {
+                display: true,
+                text: 'Storage Size (GB — Decimal)',
+                color: '#57534E',
+                font: { size: 11, weight: 'bold' }
+              },
+              ticks: { color: '#57534E', font: { size: 11 } }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#1E293B', font: { size: 11, weight: '600' } }
+            }
+          }
+        }
+      });
+    }
+
+    function getScaleChartData(mode) {
+      if (mode === 'full') {
+        const labels = [
+          'PubTables-1M Full',
+          'PubLayNet Full',
+          'OCR-Data Gated',
+          'DocBank Full',
+          'DocLayNet-v1.1',
+          '3.00 GB Budget Ceiling',
+          'CORD v2 Full',
+          'OmniDocBench Full'
+        ].map(l => wrapLabel(l, 16));
+        return {
+          labels,
+          datasets: [{
+            data: [117.0, 104.0, 86.7, 50.0, 31.8, 3.0, 2.31, 1.55],
+            backgroundColor: [
+              '#DC2626', '#DC2626', '#DC2626', '#DC2626', '#DC2626',
+              '#1E40AF', '#0F766E', '#0F766E'
+            ],
+            borderRadius: 6
+          }]
+        };
+      } else {
+        const labels = [
+          '3.00 GB Budget Ceiling',
+          'OmniDocBench Full',
+          'BigDocs PubTables Slice',
+          'CORD v2 Test+Val',
+          'SignVerOD Sample',
+          'DocLayNet Stream Cap',
+          'tech4humans Signatures',
+          'Srikandi DOCX Pack'
+        ].map(l => wrapLabel(l, 16));
+        return {
+          labels,
+          datasets: [{
+            data: [3000, 1550, 1400, 476, 283.23, 250, 147, 5.46],
+            backgroundColor: [
+              '#1E40AF', '#0F766E', '#0F766E', '#0D9488', '#D97706', '#0D9488', '#0D9488', '#2563EB'
+            ],
+            borderRadius: 6
+          }]
+        };
+      }
+    }
+
+    function initAllocationChart() {
+      const ctx = document.getElementById('bundleAllocationChart').getContext('2d');
+      allocationChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['PDF Layout & Tables', 'Indonesian OCR', 'Stamps & Signatures', 'Statutory Templates', 'Headroom (<3,000 MB)'],
+          datasets: [{
+            data: [1550, 476, 430.23, 5.46, 538.31],
+            backgroundColor: ['#1E40AF', '#0F766E', '#D97706', '#6366F1', '#E7E3DC'],
+            borderColor: '#FFFFFF',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                boxWidth: 11,
+                font: { size: 11 },
+                color: '#334155',
+                generateLabels: function(chart) {
+                  const data = chart.data;
+                  return data.labels.map((label, i) => ({
+                    text: label.length > 16 ? label.slice(0, 15) + '…' : label,
+                    fillStyle: data.datasets[0].backgroundColor[i],
+                    strokeStyle: '#FFFFFF',
+                    lineWidth: 1,
+                    index: i
+                  }));
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed;
+                  return ` ${context.label}: ${val.toFixed(2)} MB`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderBundleChecklist() {
+      const container = document.getElementById('bundle-checklist');
+      container.innerHTML = '';
+
+      bundleItems.forEach(item => {
+        const checked = activeBundleIds.has(item.id);
+        const badgeClass = item.licenseType === 'permissive'
+          ? 'badge-permissive'
+          : item.licenseType === 'gov'
+            ? 'badge-gov'
+            : 'badge-caveat';
+
+        const row = document.createElement('label');
+        row.className = `flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition ${
+          checked ? 'bg-blue-50/40 border-[#1E40AF]/50' : 'bg-white border-stone-200 hover:border-stone-300'
+        }`;
+
+        row.innerHTML = `
+          <input type="checkbox" data-item-id="${item.id}" ${checked ? 'checked' : ''} class="mt-1 h-4 w-4 rounded border-stone-300 text-[#1E40AF] focus:ring-[#1E40AF]">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="font-bold text-sm text-slate-900">${item.name}</span>
+              <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-stone-100 text-slate-800">${item.mb.toFixed(2)} MB</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 mt-1">
+              <span class="text-xs font-medium text-stone-500">${item.pillar}</span>
+              <span class="text-stone-300">•</span>
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${badgeClass}">${item.license}</span>
+            </div>
+            <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">${item.note}</p>
+          </div>
+        `;
+
+        const checkbox = row.querySelector('input');
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            activeBundleIds.add(item.id);
+          } else {
+            activeBundleIds.delete(item.id);
+          }
+          clearPresetHighlight();
+          updateBundleCalculations();
+        });
+
+        container.appendChild(row);
+      });
+    }
+
+    function clearPresetHighlight() {
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.remove('border-2', 'border-[#1E40AF]', 'bg-blue-50/60');
+        btn.classList.add('border', 'border-stone-300', 'bg-white');
+      });
+    }
+
+    function updateBundleCalculations() {
+      let totalMb = 0;
+      const pillarTotals = {
+        layout: 0,
+        ocr: 0,
+        assets: 0,
+        statutory: 0
+      };
+      const caveats = [];
+
+      bundleItems.forEach(item => {
+        if (activeBundleIds.has(item.id)) {
+          totalMb += item.mb;
+          pillarTotals[item.pillarKey] += item.mb;
+          if (item.caveat) {
+            caveats.push(`<strong>${item.name}:</strong> ${item.caveat}`);
+          }
+        }
+      });
+
+      const headroom = Math.max(0, 3000 - totalMb);
+      const overBy = totalMb > 3000 ? totalMb - 3000 : 0;
+
+      document.getElementById('sim-total-mb').textContent = `${totalMb.toFixed(2)} MB`;
+      document.getElementById('sim-total-gb').textContent = `(~${(totalMb / 1000).toFixed(2)} GB)`;
+      document.getElementById('nav-budget-value').textContent = `${totalMb.toFixed(2)} MB`;
+
+      const statusBadge = document.getElementById('sim-status-badge');
+      const progressBar = document.getElementById('sim-progress-bar');
+      const headroomLabel = document.getElementById('sim-headroom-mb');
+      const navPill = document.getElementById('nav-budget-pill');
+
+      const pct = Math.min(100, (totalMb / 3000) * 100);
+      progressBar.style.width = `${pct}%`;
+
+      if (overBy > 0) {
+        statusBadge.textContent = `Over Ceiling by ${overBy.toFixed(2)} MB`;
+        statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-900 border border-red-300';
+        progressBar.className = 'h-full bg-[#B91C1C] transition-all duration-300';
+        headroomLabel.textContent = `0.00 MB (Exceeded by ${overBy.toFixed(2)} MB)`;
+        headroomLabel.className = 'font-mono font-bold text-[#B91C1C]';
+        navPill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-50 text-red-800 border border-red-200';
+      } else if (totalMb < 1000) {
+        statusBadge.textContent = 'Below 1.00 GB Min Target';
+        statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300';
+        progressBar.className = 'h-full bg-[#D97706] transition-all duration-300';
+        headroomLabel.textContent = `${headroom.toFixed(2)} MB`;
+        headroomLabel.className = 'font-mono font-bold text-slate-900';
+        navPill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200';
+      } else {
+        statusBadge.textContent = 'Optimal 1–3 GB Fit';
+        statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300';
+        progressBar.className = 'h-full bg-[#0F766E] transition-all duration-300';
+        headroomLabel.textContent = `${headroom.toFixed(2)} MB`;
+        headroomLabel.className = 'font-mono font-bold text-slate-900';
+        navPill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200';
+      }
+
+      if (allocationChart) {
+        allocationChart.data.datasets[0].data = [
+          pillarTotals.layout,
+          pillarTotals.ocr,
+          pillarTotals.assets,
+          pillarTotals.statutory,
+          headroom
+        ];
+        allocationChart.update();
+      }
+
+      const auditList = document.getElementById('sim-audit-list');
+      if (caveats.length === 0) {
+        auditList.innerHTML = '<li>No datasets selected. Toggle items on the left or pick a preset bundle.</li>';
+      } else {
+        auditList.innerHTML = caveats.map(c => `<li>${c}</li>`).join('');
+      }
+
+      updateDynamicScript();
+      renderCatalogList();
+      renderCatalogDetail(selectedCatalogId);
+    }
+
+    function renderCatalogList() {
+      const listEl = document.getElementById('catalog-list');
+      const filtered = catalogData.filter(item => {
+        const matchPillar = activePillar === 'all' || item.pillar === activePillar;
+        const matchLicense = activeLicense === 'all' || item.licenseCategory === activeLicense;
+        const q = searchQuery.trim().toLowerCase();
+        const matchSearch = !q ||
+          item.name.toLowerCase().includes(q) ||
+          item.platform.toLowerCase().includes(q) ||
+          item.annotations.toLowerCase().includes(q) ||
+          item.fit.toLowerCase().includes(q);
+        return matchPillar && matchLicense && matchSearch;
+      });
+
+      document.getElementById('catalog-count-label').textContent = `Showing ${filtered.length} of ${catalogData.length} sources`;
+      listEl.innerHTML = '';
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="p-6 text-center text-sm text-stone-500 border border-dashed border-stone-300 rounded-xl">No matching sources. Clear search or reset filters.</div>';
+        return;
+      }
+
+      filtered.forEach(item => {
+        const isSelected = item.id === selectedCatalogId;
+        const badgeClass = item.licenseCategory === 'permissive'
+          ? 'badge-permissive'
+          : item.licenseCategory === 'gov'
+            ? 'badge-gov'
+            : item.licenseCategory === 'caveat'
+              ? 'badge-caveat'
+              : 'badge-skip';
+
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border cursor-pointer transition ${
+          isSelected ? 'bg-blue-50/50 border-[#1E40AF] shadow-sm' : 'bg-white border-stone-200 hover:border-stone-300'
+        }`;
+
+        const inBundle = item.bundleItemId && activeBundleIds.has(item.bundleItemId);
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">${item.pillarLabel}</span>
+                ${inBundle ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#1E40AF] text-white">In Active Bundle</span>' : ''}
+              </div>
+              <h4 class="font-bold text-sm text-slate-900 mt-0.5">${item.name}</h4>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${badgeClass}">${item.license}</span>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-stone-600">
+            <span>Platform: <strong>${item.platform}</strong></span>
+            <span>Compact: <strong class="font-mono text-slate-800">${item.compactSize}</strong></span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          selectedCatalogId = item.id;
+          renderCatalogList();
+          renderCatalogDetail(item.id);
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+
+    function renderCatalogDetail(id) {
+      const item = catalogData.find(d => d.id === id) || catalogData[0];
+      if (!item) return;
+
+      document.getElementById('detail-pillar-tag').textContent = item.pillarLabel;
+      document.getElementById('detail-title').textContent = item.name;
+      document.getElementById('detail-platform').textContent = `Platform: ${item.platform}`;
+      document.getElementById('detail-compact-size').textContent = item.compactSize;
+      document.getElementById('detail-full-size').textContent = item.fullSize;
+      document.getElementById('detail-annotations').textContent = item.annotations;
+      document.getElementById('detail-fit').textContent = item.fit;
+      document.getElementById('detail-caveats').textContent = item.caveats;
+
+      const badge = document.getElementById('detail-license-badge');
+      badge.textContent = item.license;
+      badge.className = `px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${
+        item.licenseCategory === 'permissive'
+          ? 'badge-permissive'
+          : item.licenseCategory === 'gov'
+            ? 'badge-gov'
+            : item.licenseCategory === 'caveat'
+              ? 'badge-caveat'
+              : 'badge-skip'
+      }`;
+
+      const actionRow = document.getElementById('detail-action-row');
+      if (item.bundleItemId) {
+        const inBundle = activeBundleIds.has(item.bundleItemId);
+        actionRow.innerHTML = `
+          <button type="button" id="detail-toggle-bundle-btn" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition ${
+            inBundle
+              ? 'bg-stone-200 text-slate-900 hover:bg-stone-300'
+              : 'bg-[#1E40AF] text-white hover:bg-blue-900'
+          }">
+            ${inBundle ? 'Remove from Active 1–3 GB Bundle' : '+ Add Compact Slice to Active 1–3 GB Bundle'}
+          </button>
+        `;
+        document.getElementById('detail-toggle-bundle-btn').addEventListener('click', () => {
+          if (activeBundleIds.has(item.bundleItemId)) {
+            activeBundleIds.delete(item.bundleItemId);
+          } else {
+            activeBundleIds.add(item.bundleItemId);
+          }
+          clearPresetHighlight();
+          renderBundleChecklist();
+          updateBundleCalculations();
+        });
+      } else {
+        actionRow.innerHTML = `
+          <div class="text-xs text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200">
+            Retrieved via manual download / headroom allocation (see Section 4 workflow).
+          </div>
+        `;
+      }
+    }
+
+    function renderWorkflowSteps() {
+      const container = document.getElementById('workflow-steps');
+      container.innerHTML = '';
+
+      workflowStepsData.forEach(s => {
+        const isOpen = s.step === activeStep;
+        const card = document.createElement('div');
+        card.className = `rounded-xl border transition cursor-pointer ${
+          isOpen ? 'bg-blue-50/40 border-[#1E40AF]' : 'bg-white border-stone-200 hover:border-stone-300'
+        }`;
+
+        card.innerHTML = `
+          <div class="p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                isOpen ? 'bg-[#1E40AF] text-white' : 'bg-stone-200 text-slate-800'
+              }">${s.step}</div>
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">${s.title}</h4>
+                <p class="text-xs text-stone-500">${s.subtitle}</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-stone-500">${isOpen ? '−' : '+'}</span>
+          </div>
+          ${isOpen ? `<div class="px-4 pb-4 pt-1 text-xs text-stone-700 leading-relaxed border-t border-stone-200/80">${s.details}</div>` : ''}
+        `;
+
+        card.addEventListener('click', () => {
+          activeStep = s.step;
+          renderWorkflowSteps();
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateDynamicScript() {
+      const lines = [
+        'from pathlib import Path',
+        'from huggingface_hub import snapshot_download, hf_hub_download',
+        '',
+        'BASE_DIR = Path("datasets/redocs_corpus")',
+        'BASE_DIR.mkdir(parents=True, exist_ok=True)',
+        ''
+      ];
+
+      if (activeBundleIds.has('omnidocbench')) {
+        lines.push('snapshot_download(');
+        lines.push('    repo_id="opendatalab/OmniDocBench",');
+        lines.push('    repo_type="dataset",');
+        lines.push('    local_dir=BASE_DIR / "omnidocbench"');
+        lines.push(')');
+        lines.push('');
+      }
+
+      if (activeBundleIds.has('bigdocs_pubtables')) {
+        lines.push('snapshot_download(');
+        lines.push('    repo_id="ServiceNow/BigDocs-7.5M",');
+        lines.push('    repo_type="dataset",');
+        lines.push('    allow_patterns=["pubtables-1m/*"],');
+        lines.push('    local_dir=BASE_DIR / "bigdocs_pubtables"');
+        lines.push(')');
+        lines.push('');
+      }
+
+      if (activeBundleIds.has('doclaynet_stream')) {
+        lines.push('from datasets import load_dataset');
+        lines.push('ds = load_dataset("docling-project/DocLayNet-v1.2", split="test", streaming=True)');
+        lines.push('for idx, sample in enumerate(ds.take(80)):');
+        lines.push('    pass');
+        lines.push('');
+      }
+
+      if (activeBundleIds.has('cord_v2_compact')) {
+        lines.push('snapshot_download(');
+        lines.push('    repo_id="naver-clova-ix/cord-v2",');
+        lines.push('    repo_type="dataset",');
+        lines.push('    allow_patterns=["data/test-*.parquet", "data/validation-*.parquet"],');
+        lines.push('    local_dir=BASE_DIR / "cord_v2_compact"');
+        lines.push(')');
+        lines.push('');
+      }
+
+      if (activeBundleIds.has('cord_v2_full')) {
+        lines.push('snapshot_download(');
+        lines.push('    repo_id="naver-clova-ix/cord-v2",');
+        lines.push('    repo_type="dataset",');
+        lines.push('    local_dir=BASE_DIR / "cord_v2_full"');
+        lines.push(')');
+        lines.push('');
+      }
+
+      if (activeBundleIds.has('tech4humans_sig')) {
+        lines.push('snapshot_download(');
+        lines.push('    repo_id="tech4humans/signature-detection",');
+        lines.push('    repo_type="dataset",');
+        lines.push('    local_dir=BASE_DIR / "tech4humans_signatures"');
+        lines.push(')');
+        lines.push('');
+      }
+
+      if (activeBundleIds.has('signverod_sample')) {
+        lines.push('print("Fetch SignVerOD 283.23 MB sample via dataset_tools (SignverOD)")');
+      }
+
+      if (activeBundleIds.has('srikandi_docx')) {
+        lines.push('print("Place srikandilangkat 5.46 MB .docx pack & JDIH Cirebon PDFs into templates/")');
+      }
+
+      document.getElementById('dynamic-script-output').textContent = lines.join('\n');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initScaleChart();
+      initAllocationChart();
+      renderBundleChecklist();
+      updateBundleCalculations();
+      renderCatalogList();
+      renderCatalogDetail(selectedCatalogId);
+      renderWorkflowSteps();
+
+      document.getElementById('btn-scale-full').addEventListener('click', (e) => {
+        scaleMode = 'full';
+        e.target.className = 'px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition';
+        document.getElementById('btn-scale-slice').className = 'px-3 py-1 rounded-md text-stone-600 hover:text-slate-900 transition';
+        document.getElementById('scale-chart-caption').textContent = 'Full document layout corpora range from 28 GB to 117 GB—far above the 3.00 GB ceiling. Switch to "Compact Target Slices" to inspect how Parquet shards and test subsets fit cleanly inside budget.';
+        scaleChart.data = getScaleChartData('full');
+        scaleChart.options.scales.x.title.text = 'Storage Size (GB — Decimal)';
+        scaleChart.update();
+      });
+
+      document.getElementById('btn-scale-slice').addEventListener('click', (e) => {
+        scaleMode = 'slice';
+        e.target.className = 'px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition';
+        document.getElementById('btn-scale-full').className = 'px-3 py-1 rounded-md text-stone-600 hover:text-slate-900 transition';
+        document.getElementById('scale-chart-caption').textContent = 'Targeted Parquet shards, sample splits, and template packs stay well below the 3,000 MB ceiling, allowing multi-pillar coverage on modest hardware.';
+        scaleChart.data = getScaleChartData('slice');
+        scaleChart.options.scales.x.title.text = 'Storage Size (MB — Decimal)';
+        scaleChart.update();
+      });
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const presetKey = btn.getAttribute('data-preset');
+          activeBundleIds = new Set(presets[presetKey]);
+          clearPresetHighlight();
+          btn.classList.remove('border', 'border-stone-300', 'bg-white');
+          btn.classList.add('border-2', 'border-[#1E40AF]', 'bg-blue-50/60');
+          renderBundleChecklist();
+          updateBundleCalculations();
+        });
+      });
+
+      document.querySelectorAll('.pillar-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activePillar = btn.getAttribute('data-pillar');
+          document.querySelectorAll('.pillar-filter-btn').forEach(b => {
+            b.className = 'pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200';
+          });
+          btn.className = 'pillar-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1E40AF] text-white';
+          renderCatalogList();
+        });
+      });
+
+      document.getElementById('license-filter').addEventListener('change', (e) => {
+        activeLicense = e.target.value;
+        renderCatalogList();
+      });
+
+      document.getElementById('catalog-search').addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderCatalogList();
+      });
+
+      document.getElementById('copy-script-btn').addEventListener('click', () => {
+        const text = document.getElementById('dynamic-script-output').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById('copy-script-btn');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy Snippet'; }, 1800);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

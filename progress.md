@@ -2,6 +2,29 @@
 
 **Last updated:** 2026-11-26
 
+## Government document scraper
+
+- Reviewed `scripts/scraper.py`; added domain-limited redirect handling,
+  HTTPS-downgrade rejection, robots checks on redirect targets, fail-closed
+  handling for unavailable/unexpected robots responses, and CLI input checks.
+- Added four unit tests for redirect scope, HTTPS downgrade, and robots
+  enforcement.
+- All four unit tests pass; Pylance reports no syntax errors or diagnostics
+  for the scraper or its tests.
+- A crawl of BPK-hosted detail pages was skipped because the scraper could not
+  obtain an allowed robots decision from that host; it did not attempt to
+  bypass the restriction.
+- The Cirebon DPRD JDIH endpoint returned HTTP 502 and `jdihn.go.id` failed TLS
+  certificate verification during access checks; neither was bypassed.
+- Dry-ran and then retrieved three public regulations from the official
+  `peraturan.go.id` portal: one Kemendagri and one ANRI regulation plus a
+  second Kemendagri regulation. The PDFs and their provenance/checksum
+  manifest are local under `pairs/gov-docs/`, which is Git-ignored.
+- Confirmed all three PDFs have extractable text on page 1 (74, 111, and 131
+  pages respectively), so they are useful public layout/legal-document
+  examples but are not verified as scanned-image OCR samples.
+- This is a small targeted sample, not the complete 20–30 document benchmark.
+
 ## Repository setup
 
 - Added a root `.gitignore` rule to exclude `templates/` from version control.
